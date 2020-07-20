@@ -1,13 +1,20 @@
+//UINT: unsigned int
+
+
 void KG3D_SaveVertexAnimation(KG3D_MESH_FILE_DATA** pFileData, UINT uNum, const char* pcszAniFilePath)
 {
+	//XMFLOAT3为一个类型声明 等同于typedef
 	using XMFLOAT3 = DirectX::XMFLOAT3;
 
+	//HRESULT 常被用作COM调用的返回值。充分利用HRESULT返回信息可以帮助提高我们的代码质量，提供程序的健壮性。
+	//E_FAIL 未指定的失败 0x80004005 一般来讲是函数调用错误。需要用（hr == E_FAIL） 来判断　
 	HRESULT hrResult = E_FAIL;
 
 	FILE* pFile = nullptr;
+	//unsigned long 64位中为8字节
 	size_t uSize = 0;
 
-
+	//DWORD代表unsigned long  64位机上为64位
 	DWORD dwVertexNum = pFileData[0]->dwVertexCount;
 	DWORD dwFrameNum = uNum;
 
@@ -15,6 +22,25 @@ void KG3D_SaveVertexAnimation(KG3D_MESH_FILE_DATA** pFileData, UINT uNum, const 
 	DWORD dwStaticVertexNum = 0;
 	DWORD dwBlockLength = 0;
 
+	/*
+	struct _ANI_FILE_HEADER
+	{
+        DWORD dwMask;
+        DWORD dwBlockLength;
+        DWORD dwNumAnimations;
+        DWORD dwType;
+        char  strDesc[ANI_STRING_SIZE];
+	};
+
+	struct _VERTEX_ANI_VERSION2
+	{
+    DWORD dwNumVertices;
+    DWORD dwNumAnimatedVertices;
+    DWORD dwNumFrames;
+    float fFrameLength;
+    DWORD dwRealAnimatedVertex;
+	};
+	*/
 	_ANI_FILE_HEADER aniHeader;
 	_VERTEX_ANI_VERSION2 vetrexAniHeader;
 
@@ -27,7 +53,7 @@ void KG3D_SaveVertexAnimation(KG3D_MESH_FILE_DATA** pFileData, UINT uNum, const 
 	std::vector<XMFLOAT3> vecVetex;
 
 	// ani file header
-	aniHeader.dwMask = ANI_FILE_MASK_VERVION2;	
+	aniHeader.dwMask = std::vector<XMFLOAT3> vecVetex;;	
 	aniHeader.dwNumAnimations = 1;
 	aniHeader.dwType = ANIMATION_VERTICES;
 	strcpy_s(aniHeader.strDesc, _countof(aniHeader.strDesc), "test");
@@ -133,7 +159,7 @@ void KG3D_SaveVertexAnimation(KG3D_MESH_FILE_DATA** pFileData, UINT uNum, const 
 	{
 		fopen_s(&pFile, pcszAniFilePath, "wb");
 		KGLOG_PROCESS_ERROR(pFile);
-
+ 
 		uSize = fwrite(&aniHeader, sizeof(_ANI_FILE_HEADER), 1, pFile);
 		KGLOG_PROCESS_ERROR(uSize == 1);
 
@@ -169,3 +195,32 @@ Exit0:
 	KG3D_DELETE_ARRAY(nullptr, pRealVertexIndex);
 	KG3D_DELETE_ARRAY(nullptr, pAnimatedVertexPos);	
 }
+
+/*
+1.
+errno_t fopen_s( FILE** pFile, const char *filename, const char *mode )
+pFile 文件指针将接收到打开的文件指针指向的指针
+infilename 文件名
+inmode 允许的访问类型
+
+2.
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
+ptr-- 这是指向要被写入的元素数组的指针。
+size-- 这是要被写入的每个元素的大小，以字节为单位。
+nmemb-- 这是元素的个数，每个元素的大小为 size 字节。
+stream-- 这是指向 FILE 对象的指针，该 FILE 对象指定了一个输出流。
+
+3.void *memcpy(void *str1, const void *str2, size_t n)
+str1 -- 指向用于存储复制内容的目标数组，类型强制转换为 void* 指针。
+str2 -- 指向要复制的数据源，类型强制转换为 void* 指针。
+n -- 要被复制的字节数。
+
+
+const unsigned        ANI_FILE_MASK = 0x414E494D;
+const unsigned        ANI_FILE_MASK_VERVION2 = 0x324E494D;
+const unsigned        ANI_FILE_MASK_COMPRESS = 0x434E494D;//Version1.0的压缩版
+const unsigned        ANI_FILE_MASK_VERVION2_COMPRESS = 0x343E393D;//Version2.0的压缩版
+
+const float           CRPRECISION = 1.f / SHRT_MAX;
+const DWORD           ANI_FILE_END_FLAG = 0xFFFFFFFF;
+*/
